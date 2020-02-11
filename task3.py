@@ -1,4 +1,6 @@
 import pandas as pd
+import datetime as dt
+import pytz
 
 def data_prepare():
 
@@ -20,6 +22,9 @@ def data_prepare():
         lesson_mark = lesson_mark.fillna(0)
         temp = 0
 
+        casual_time = pytz.utc.localize(dt.datetime.fromisoformat(row.scheduled_time)).astimezone(pytz.timezone('Europe/Moscow'))
+        casual_time = casual_time.strftime("%Y-%m-%d")
+
         if lesson_mark.empty:
             continue
         else:
@@ -32,23 +37,21 @@ def data_prepare():
             continue
 
         if len(data) == 0:
-            data.append([row.scheduled_time.split(" ")[:-1],
+            data.append([casual_time,
                          row.user_id,
                          temp, i])
             continue
 
         for j in range(len(data)):
-
-            if row.user_id in data[j] and row.scheduled_time.split(" ")[:-1] in data[j]:
+            if row.user_id in data[j] and casual_time in data[j]:
                 data[j][2] += temp
                 data[j][3] += i
                 break
             elif j == (len(data) - 1):
-                data.append([row.scheduled_time.split(" ")[:-1],
+                data.append([casual_time,
                          row.user_id,
                          temp, i])
 
-    data.sort()
     return data
 
 def post_data_analize(data):
@@ -60,17 +63,15 @@ def post_data_analize(data):
 
         if len(result) == 0:
             result.append([data[i][0], data[i][1], middle_mark])
-            continue
-
-        for j in range(len(result)):
-            if data[i][0] in result[j]:
-                if middle_mark < result[j][2]:
-                    result[j][1] = data[i][1]
-                    result[j][2] = middle_mark
-                else:
+        else:
+            for j in range(len(result)):
+                if data[i][0] in result[j]:
+                    if middle_mark < result[j][2]:
+                        result[j][1] = data[i][1]
+                        result[j][2] = middle_mark
                     break
-            elif j == len(result) - 1:
-                result.append([data[i][0], data[i][1], middle_mark])
+                elif j == len(result) - 1:
+                    result.append([data[i][0], data[i][1], middle_mark])
 
     for i in result:
         print(i, "\n")
